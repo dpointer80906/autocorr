@@ -1,26 +1,33 @@
 // lag 1 autocorr
-// http://qed.econ.queensu.ca/ETM/corrections/Third-pdf/pg564-5.pdf  eqn 13.26
-package main
+package autocorr
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
-	"os"
 )
 
-var dpWindow int    // data points window from yData (N)
-var dpTotal int     // data points total
 var yData []float64 // all data points
 
+type Config struct {
+	Total  int // total yData size
+	Window int // window into yData (N)
+}
+
+var config Config // data from config.json file
+
 func init() {
-	dpWindow = 30
-	dpTotal = 3000
 
-	filename := dataFilename()
-	fmt.Printf("%v", filename)
+	// read jsoninit data file into config struct
+	data, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	json.Unmarshal(data, &config)
 
-	yData = make([]float64, dpTotal)
+	// create Total random data points
+	yData = make([]float64, config.Total)
 	for i := range yData {
 		yData[i] = rand.Float64()
 	}
@@ -29,13 +36,6 @@ func init() {
 func main() {
 	autocorr := AutocorrLag1()
 	fmt.Printf("%v\n", autocorr)
-}
-
-func dataParams() (window, total int) {
-	inputReader := bufio.NewReader(os.Stdin)
-	fmt.Printf("number of random data points to autocorrelate? ")
-	filename, _ = inputReader.R('\n')
-	return
 }
 
 // Calculate the initial yData window's sum.
@@ -59,18 +59,18 @@ func AutocorrLag1() (autocorr float64) {
 	var variance float64   // autocorr denominator
 	var yMean float64      // mean of yData window data
 
-	ySum := initialSum(yData[0:dpWindow])
+	ySum := initialSum(yData[0:config.Window])
 	// calculate covariance, variance terms 0..N-1
-	for i := 0; i < dpTotal-dpWindow-1; i++ {
-		yMean = ySum / float64(dpWindow)
+	for i := 0; i < config.Total-config.Window-1; i++ {
+		yMean = ySum / float64(config.Window)
 		thisYSubMean := yData[i] - yMean
 		nextYSubMean := yData[i+1] - yMean
 		covariance += thisYSubMean * nextYSubMean
 		variance += thisYSubMean * thisYSubMean
-		ySum = runningSum(yData[i:i+dpWindow], ySum)
+		ySum = runningSum(yData[i:i+config.Window], ySum)
 	}
 	// pick up final variance term N
-	thisYSubMean := yData[dpTotal-dpWindow] - yMean
+	thisYSubMean := yData[config.Total-config.Window] - yMean
 	variance += thisYSubMean * thisYSubMean
 	autocorr = covariance / variance
 	return
