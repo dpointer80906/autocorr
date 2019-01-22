@@ -3,7 +3,7 @@ package autocorr
 import (
 	"fmt"
 
-	"./autocorr"
+	"github.com/dpointer80906/autocorr"
 )
 
 func ExampleAutocorr() {
