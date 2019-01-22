@@ -1,4 +1,4 @@
-// lag 1 autocorr
+// lag 1 autocorrelation of a set of random numbers
 package autocorr
 
 import (
@@ -31,11 +31,6 @@ func init() {
 	for i := range yData {
 		yData[i] = rand.Float64()
 	}
-}
-
-func main() {
-	autocorr := AutocorrLag1()
-	fmt.Printf("%v\n", autocorr)
 }
 
 // Calculate the initial yData window's sum.
