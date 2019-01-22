@@ -1,4 +1,4 @@
-package autocorr
+package autocorr_test
 
 import (
 	"fmt"
