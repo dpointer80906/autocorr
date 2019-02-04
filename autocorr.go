@@ -6,55 +6,34 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"os"
 )
 
-var yData []float64 // all data points
-
+// configuration data read from file
 type Config struct {
 	Total  int // total yData size
 	Window int // window into yData (N)
 }
 
-var config Config // data from config.json file
-
-func init() {
-
-	// read jsoninit data file into config struct
-	data, err := ioutil.ReadFile("config.json")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	json.Unmarshal(data, &config)
-
-	// create Total random data points
-	yData = make([]float64, config.Total)
-	for i := range yData {
-		yData[i] = rand.Float64()
-	}
+func Example() {
+	result := Lag1Autocorr()
+	fmt.Printf("%v\n", result)
 }
 
-// Calculate the initial yData window's sum.
-func initialSum(yWindow []float64) (ySum float64) {
-	for i := range yWindow {
-		ySum += yWindow[i]
-	}
-	return
-}
-
-// Adjust running (sliding) sum of yData slice: subtract first slice value,
-// add the last slice value to surrent sum.
-func runningSum(yWindow []float64, oldSum float64) (newSum float64) {
-	newSum = oldSum + yWindow[len(yWindow)-1] - yWindow[0]
-	return
-}
-
-// Estimate autocorrrelation function lag 1 for yData.
-func AutocorrLag1() (autocorr float64) {
+// Estimate autocorrelation function lag 1 for yData.
+func Lag1Autocorr() (acorr float64) {
 	var covariance float64 // autocorr numerator
 	var variance float64   // autocorr denominator
 	var yMean float64      // mean of yData window data
 
+	config, err := initConfig()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	yData := initData(config)
 	ySum := initialSum(yData[0:config.Window])
+
 	// calculate covariance, variance terms 0..N-1
 	for i := 0; i < config.Total-config.Window-1; i++ {
 		yMean = ySum / float64(config.Window)
@@ -64,9 +43,50 @@ func AutocorrLag1() (autocorr float64) {
 		variance += thisYSubMean * thisYSubMean
 		ySum = runningSum(yData[i:i+config.Window], ySum)
 	}
+
 	// pick up final variance term N
 	thisYSubMean := yData[config.Total-config.Window] - yMean
 	variance += thisYSubMean * thisYSubMean
-	autocorr = covariance / variance
+	acorr = covariance / variance
+	return
+}
+
+// initialize configuration data
+func initConfig() (config Config, err error) {
+
+	// read json init data file into config struct
+	data, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		return
+	} else {
+		err = json.Unmarshal(data, &config)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// create Total random data points
+func initData(config Config) (yData []float64) {
+	yData = make([]float64, config.Total)
+	for i := range yData {
+		yData[i] = rand.Float64()
+	}
+	return
+}
+
+// calculate the initial yData window's sum.
+func initialSum(yWindow []float64) (ySum float64) {
+	for i := range yWindow {
+		ySum += yWindow[i]
+	}
+	return
+}
+
+// Adjust running (sliding) sum of yData slice: subtract first slice value,
+// add the last slice value to current sum.
+func runningSum(yWindow []float64, oldSum float64) (newSum float64) {
+	newSum = oldSum + yWindow[len(yWindow)-1] - yWindow[0]
 	return
 }
