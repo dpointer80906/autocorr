@@ -4,14 +4,61 @@ import (
 	"testing"
 )
 
-// compare actual to expected autocorrelation value with default random seed
-func TestLag1Autocorr(t *testing.T) {
-	var expected = -0.02919829220151911
+func TestInitConfig(t *testing.T) {
+	config, err := initConfig("config.json")
+	if err != nil {
+		t.Log("err is not nil")
+		t.Fail()
+	}
+	if config.Total != 3000 {
+		t.Log("invalid Total")
+		t.Fail()
+	}
+	if config.Window != 30 {
+		t.Log("invalid Window")
+		t.Fail()
+	}
+	config, err = initConfig("invalid.json")
+	if err != nil {
+		t.Log(err.Error())
+	} else {
+		t.Log("err is nil")
+		t.Fail()
+	}
 
-	actual := Example()
+}
+
+func TestInitData(t *testing.T) {
+	config := Config{Total: 10, Window: 1}
+	yData := initData(config, 1)
+	if len(yData) != config.Total {
+		t.Fail()
+	}
+}
+
+func TestInitalSum(t *testing.T) {
+	config := Config{Total: 10, Window: 2}
+	yData := initData(config, 1)
+	actual := initialSum(yData[0:config.Window])
+	expected := yData[0] + yData[1]
 	if !floatEquals(expected, actual) {
 		t.Fail()
 	}
+}
+
+func TestRunningSum(t *testing.T) {
+	config := Config{Total: 10, Window: 3}
+	yData := make([]float64, config.Total)
+	for i := range yData {
+		yData[i] = float64(i)
+	}
+	ySum := initialSum(yData[0:config.Window])
+	t.Logf("initial sum %v %v\n", ySum, yData[0:config.Window])
+	for i := 1; i < config.Total-config.Window-1; i++ {
+		ySum = runningSum(yData[i:i+config.Window], ySum)
+		t.Logf("sum %v %v %v\n", i, ySum, yData[i:i+config.Window])
+	}
+
 }
 
 // credit: https://gist.github.com/cevaris/bc331cbe970b03816c6b (Adam Cardenas)
