@@ -39,7 +39,7 @@ func TestInitData(t *testing.T) {
 func TestInitalSum(t *testing.T) {
 	config := Config{Total: 10, Window: 2}
 	yData := initData(config, 1)
-	actual := initialSum(yData[0:config.Window])
+	actual := sumWindow(yData[0:config.Window])
 	expected := yData[0] + yData[1]
 	if !floatEquals(expected, actual) {
 		t.Fail()
@@ -52,11 +52,13 @@ func TestRunningSum(t *testing.T) {
 	for i := range yData {
 		yData[i] = float64(i)
 	}
-	ySum := initialSum(yData[0:config.Window])
-	t.Logf("initial sum %v %v\n", ySum, yData[0:config.Window])
-	for i := 1; i < config.Total-config.Window-1; i++ {
-		ySum = runningSum(yData[i:i+config.Window], ySum)
-		t.Logf("sum %v %v %v\n", i, ySum, yData[i:i+config.Window])
+	ySum := sumWindow(yData[0:config.Window])
+	for i := 0; i < config.Total-config.Window-1; i++ {
+		ySum = runningSum(yData[i:i+config.Window+1], ySum)
+		expected := sumWindow(yData[i+1 : i+config.Window+1])
+		if expected != ySum {
+			t.Fail()
+		}
 	}
 
 }

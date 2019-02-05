@@ -36,7 +36,7 @@ func Lag1Autocorr() (acorr float64) {
 	}
 	// TODO: provide capability to optionally specify seed from command line
 	yData := initData(config, 1)
-	ySum := initialSum(yData[0:config.Window])
+	ySum := sumWindow(yData[0:config.Window])
 
 	// calculate covariance, variance terms 0..N-1
 	for i := 0; i < config.Total-config.Window-1; i++ {
@@ -45,7 +45,7 @@ func Lag1Autocorr() (acorr float64) {
 		nextYMean := yData[i+1] - yMean
 		covariance += thisYMean * nextYMean
 		variance += thisYMean * thisYMean
-		ySum = runningSum(yData[i:i+config.Window], ySum)
+		ySum = runningSum(yData[i:i+config.Window+1], ySum)
 	}
 	// pick up final variance term N
 	thisYMean := yData[config.Total-config.Window] - yMean
@@ -81,7 +81,7 @@ func initData(config Config, seed int64) (yData []float64) {
 }
 
 // calculate the initial yData window's sum.
-func initialSum(yWindow []float64) (ySum float64) {
+func sumWindow(yWindow []float64) (ySum float64) {
 	for i := range yWindow {
 		ySum += yWindow[i]
 	}
@@ -92,6 +92,5 @@ func initialSum(yWindow []float64) (ySum float64) {
 // add the last slice value to current sum.
 func runningSum(yWindow []float64, oldSum float64) (newSum float64) {
 	newSum = oldSum + yWindow[len(yWindow)-1] - yWindow[0]
-	fmt.Printf("%v %v %v %v\n", newSum, oldSum, yWindow[len(yWindow)-1], yWindow[0])
 	return
 }
